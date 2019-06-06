@@ -1,5 +1,7 @@
 #!/usr/local/bin/python3
 
+import time
+
 # functions
 
 def gcode_Get_Position():
@@ -18,6 +20,7 @@ def gcode_Feed_Hold(foo):
 
 def gcode_Homing(foo):
 	'homing'
+	print("Home called!")
 
 def gcode_Sleep(foo):
 	'sleep'
@@ -39,6 +42,7 @@ def gcode_Resume(foo):
 
 def gcode_Unload(foo):
 	'gcode:unload'
+	print("Unload called!")
 
 def gcode_Move(args):
 
@@ -61,76 +65,92 @@ def Step_Size(dir):
 	print("step size: %.2fmm" % STEP_INCREMENTS[step_index])
 
 def decode_key(key):
+	global key_rep_num
 	action=''
 	for action in [rec for rec in ACTIONS if rec['key'] == key]:
 		pass
 	#print(action)
 	if action!='':
-		action['method'](action['params'])
-	else:
-		print(key+" not found!")
+		ignore=False
+		if action['flag']==F_3TIME:
+			if key_rep_num==3:
+				key_rep_num=0
+			else:
+				ignore=True
+		if action['flag']==F_IGNORE_REPEAT:
+			if key_rep_num>1:
+				ignore=True
+		if not ignore:
+			action['method'](action['params'])
+
 
 def push_gcode(gcode):
 	'push a command into gcode buffer'
 	print("gcode: %s" % gcode)
 
+def get_key_press():
+	global cur_key, prev_key
+	global cur_key_time, prev_key_time
+	global key_rep_num, key_delta_time
+
+	prev_key = cur_key
+	prev_key_time = cur_key_time
+	cur_key  = input()
+	cur_key_time = time.time()
+
+	if prev_key_time is None:
+		key_delta_time = 0.0
+	else:
+		key_delta_time = cur_key_time - prev_key_time 
+
+	if (cur_key == prev_key) and (key_delta_time<=KEY_REPEAT_TIME):
+		key_rep_num+=1
+	else:
+		key_rep_num=1
+
+	print(cur_key,prev_key,key_delta_time,key_rep_num)
+	decode_key(cur_key)
+
+
 # constants and global variables section
 
+CNC_LIMITS={'xmin':0.0, 'xmax':450.0, 'ymin':0.0, 'ymax':1024.0, 'zmin':0.0, 'zmax':35.0}
 STEP_INCREMENTS=[0.01,0.05,0.1,0.5,1.0,5.0,10.0,50.0,100.0]
 
-ACTIONS=(	{'key':'KEY_0', 'method':gcode_Cycle_Start, 'params':None},
-			{'key':'KEY_1', 'method':gcode_Feed_Hold, 'params':None},
-			{'key':'KEY_2', 'method':gcode_Homing, 'params':None},
-			{'key':'KEY_3', 'method':gcode_Sleep, 'params':None},
-			{'key':'KEY_4', 'method':gcode_Unlock, 'params':None},
-			{'key':'KEY_5', 'method':gcode_Start, 'params':None},
-			{'key':'KEY_6', 'method':gcode_Pause, 'params':None},
-			{'key':'KEY_7', 'method':gcode_Stop, 'params':None},
-			{'key':'KEY_8', 'method':gcode_Resume, 'params':None},
-			{'key':'KEY_9', 'method':gcode_Unload, 'params':None},
-			{'key':'KEY_-', 'method':Step_Size, 'params':-1},
-			{'key':'KEY_+', 'method':Step_Size, 'params':+1},
-			{'key':'KEY_X-', 'method':gcode_Move, 'params':['X',-1]},
-			{'key':'KEY_X+', 'method':gcode_Move, 'params':['X',+1]},
-			{'key':'KEY_Y-', 'method':gcode_Move, 'params':['Y',-1]},
-			{'key':'KEY_Y+', 'method':gcode_Move, 'params':['Y',+1]},
-			{'key':'KEY_Z-', 'method':gcode_Move, 'params':['Z',-1]},
-			{'key':'KEY_Z+', 'method':gcode_Move, 'params':['Z',+1]}
+F_IGNORE_REPEAT=1
+F_3TIME=2
+ACTIONS=(	{'key':'KEY_0', 'method':gcode_Cycle_Start, 	'params':None, 		'flag':None				},
+			{'key':'KEY_1', 'method':gcode_Feed_Hold, 		'params':None, 		'flag':None				},
+			{'key':'H', 	'method':gcode_Homing, 			'params':None, 		'flag':F_3TIME			},
+			{'key':'KEY_3', 'method':gcode_Sleep, 			'params':None, 		'flag':None				},
+			{'key':'KEY_4', 'method':gcode_Unlock, 			'params':None, 		'flag':None				},
+			{'key':'KEY_5', 'method':gcode_Start, 			'params':None, 		'flag':None				},
+			{'key':'KEY_6', 'method':gcode_Pause, 			'params':None, 		'flag':None				},
+			{'key':'KEY_7', 'method':gcode_Stop, 			'params':None, 		'flag':None				},
+			{'key':'KEY_8', 'method':gcode_Resume, 			'params':None, 		'flag':None				},
+			{'key':'U', 	'method':gcode_Unload, 			'params':None, 		'flag':F_IGNORE_REPEAT	},
+			{'key':'-', 	'method':Step_Size, 			'params':-1, 		'flag':None				},
+			{'key':'+', 	'method':Step_Size, 			'params':+1, 		'flag':None				},
+			{'key':'A', 	'method':gcode_Move, 			'params':['X',-1], 	'flag':None				},
+			{'key':'S', 	'method':gcode_Move, 			'params':['X',+1], 	'flag':None				},
+			{'key':'Q', 	'method':gcode_Move, 			'params':['Y',-1], 	'flag':None				},
+			{'key':'Z', 	'method':gcode_Move, 			'params':['Y',+1], 	'flag':None				},
+			{'key':'W', 	'method':gcode_Move, 			'params':['Z',-1], 	'flag':None				},
+			{'key':'X', 	'method':gcode_Move, 			'params':['Z',+1], 	'flag':None				}
 		)
 
+KEY_REPEAT_TIME=1.0
 step_index=STEP_INCREMENTS.index(1.0)
 tool_pos = {'X':0.0,'Y':0.0,'Z':0.0}
-
+prev_key = None
+prev_key_time = None
+cur_key = None
+cur_key_time = None
+key_rep_num = 0
 
 # main program
 
 gcode_Get_Position()
-print(step_index)
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_X+')
-decode_key('KEY_Y+')
-decode_key('KEY_Z+')
-decode_key('KEY_X-')
-decode_key('KEY_Y-')
-decode_key('KEY_Z-')
 
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_-')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
-decode_key('KEY_+')
+while (True):
+	get_key_press()
