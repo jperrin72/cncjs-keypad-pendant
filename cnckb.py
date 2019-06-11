@@ -1,21 +1,22 @@
-#!/usr/bin/python
+#!/usr/local/bin/python3
 # inspired by cncjs-pendant-raspi-gpio: https://github.com/cncjs/cncjs-pendant-raspi-gpio
 # This CNC.js pendant opens a connection to the CNC.js web server, opens a serial port connection,
 # writes a command, then terminates.
 
-import jwt
+import jwt # pip install pyjwt
 import logging
-from socketIO_client import SocketIO, LoggingNamespace
+from socketIO_client import SocketIO, LoggingNamespace # pip install socketIO-client==0.5.7.2
 
-SERVER_ADDRESS = "192.168.0.19"
+SERVER_ADDRESS = "127.0.0.1"
 SERVER_PORT = 8000
 
-SERIAL_PORT = "ENTER_SERIAL_PORT_HERE" # e.g. /dev/ttyACM0
+SERIAL_PORT = "/dev/tty.MALS" # e.g. /dev/ttyACM0
 SERIAL_BAUDRATE = 115200
 
-SECRET = "ENTER_SECRET_HERE" # obtained from ~/.cncrc (home directory of user that runs CNC.js)
-USER_ID = "ENTER_USER_ID_HERE" # obtained from ~/.cncrc
-USER_NAME = "ENTER_USERNAME_HERE"
+SECRET = "$2a$10$6LHS.kcGOmdGcu2kmbTMUu" # obtained from ~/.cncrc (home directory of user that runs CNC.js)
+USER_ID = "" # obtained from ~/.cncrc
+USER_NAME = "cncjs"
+USER_PASS = ""
 
 CONTROLLER_TYPE = "Grbl"
 COMMAND = "$H" # run homing cycle
