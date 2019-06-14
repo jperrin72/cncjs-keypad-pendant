@@ -45,6 +45,7 @@ def connect_message():
 def open_startup(data):
     print("startup=",data)
     sio.emit('open', SERIAL_PORT)
+    #sio.emit("open",{"port":"/dev/ttyUSB0","baudrate":115200,"controllerType":"Grbl"})
 
 @sio.on('serialport:open')
 def serialport_open_message(data):
@@ -86,7 +87,8 @@ def sender_status_message(status):
 @sio.on('workflow:state')
 def workflow_state_message(state):
     print("workflow:state=",state)
-    sio.emit('write','G91 X10;\n')
+    #sio.emit('write','G91 X10;\n')
+    sio.emit("$H\n",{"source":"client"})
 
 
 @sio.on('error')
