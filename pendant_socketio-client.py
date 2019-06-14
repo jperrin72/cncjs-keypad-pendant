@@ -23,6 +23,7 @@ USER_ID = "" # obtained from ~/.cncrc
 USER_NAME = "cnc"
 USER_PASS = ""
 
+signed_jwt = jwt.encode({'id': USER_ID, 'name': USER_NAME}, SECRET, algorithm='HS256')
 access_token = jwt.encode({'id': USER_ID, 'name': USER_NAME}, SECRET, algorithm='HS256')
 access_token_url_string = "{}".format(access_token.decode('utf-8'))
 
@@ -44,8 +45,12 @@ def on_serial_port_write(*args):
   global loop
   loop = False
 
+print(str(LoggingNamespace))
+
 loop = True
-with SocketIO(SERVER_ADDRESS, SERVER_PORT, LoggingNamespace, params={'token': access_token}) as socketIO:
+with SocketIO(SERVER_ADDRESS, SERVER_PORT, LoggingNamespace, params={'token':'{}'.format(signed_jwt),'transport': ['xhr-polling']}, headers={'Authorization': 'Bearer {}'.format(signed_jwt.decode('utf-8'))}) as socketIO:
   socketIO.on('connect', on_connect)
   while loop:
     socketIO.wait(seconds=WAIT_DURATION)
+
+# problem sur reception sid 
