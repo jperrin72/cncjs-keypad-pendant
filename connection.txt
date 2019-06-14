@@ -7,6 +7,29 @@ disconnect
 close
 
 ----------
+Look for Protocol WebSocket - Info=Websocket Text
+
+
+420["open","/dev/tty.MALS",{"controllerType":"Grbl","baudrate":115200,"rtscts":false}]
+
+
+
+42["write","/dev/tty.MALS","G0 X100\r",{"__sender__":"a34ca1a6-29f3-4abb-939e-fece821219d8"}]
+
+
+
+
+
+42["write","/dev/tty.MALS","$H\r",{"__sender__":"a34ca1a6-29f3-4abb-939e-fece821219d8"}]
+
+=>
+
+42["serialport:write","$H\r",{"__sender__":"a34ca1a6-29f3-4abb-939e-fece821219d8","source":"client"}]
+
+421["close","/dev/tty.MALS"]
+
+
+------
 
 
 GET / HTTP/1.1
