@@ -24,21 +24,25 @@ serialport:write= $H
 serialport:close
 """
 
-#SERVER_ADDRESS = "192.168.0.19" # cncox
-SERVER_ADDRESS = "127.0.0.1" # localhost
+SERVER_ADDRESS = "192.168.0.19" # cncox
 SERVER_PORT = 8000
-
-#SERIAL_PORT = "/dev/ttyUSB0" # cncox
-SERIAL_PORT = "/dev/tty.MALS" # e.g. /dev/ttyACM0
+SERIAL_PORT = "/dev/ttyUSB0" # cncox
 SERIAL_BAUDRATE = 115200
+SECRET = "$2a$10$IYnT/KjMHedGJUqaS.riNe" # cncox
 CONTROLLER_TYPE = "Grbl"
 
-#SECRET = "$2a$10$IYnT/KjMHedGJUqaS.riNe" # cncox
+"""
+SERVER_ADDRESS = "127.0.0.1" # localhost
+SERVER_PORT = 8000
+SERIAL_PORT = "/dev/tty.MALS" # e.g. /dev/ttyACM0
+SERIAL_BAUDRATE = 115200
 SECRET = "$2a$10$6LHS.kcGOmdGcu2kmbTMUu" # localhost
+CONTROLLER_TYPE = "Grbl"
+"""
+
 USER_ID = "" # obtained from ~/.cncrc
 USER_NAME = "cncjs-pendant"
 USER_PASS = ""
-COMMAND="$$"
 
 signed_jwt = jwt.encode({'id': USER_ID, 'name': USER_NAME}, SECRET, algorithm='HS256')
 access_token = jwt.encode({'id': USER_ID, 'name': USER_NAME}, SECRET, algorithm='HS256')
@@ -75,7 +79,7 @@ def serialport_open_message(data):
 @sio.on('serialport:close')
 def serialport_close_message(data):
     print("serialport:close")
-    sio.disconnect()
+    #sio.disconnect()
 
 @sio.on('serialport:read')
 def serialport_read_message(data):
@@ -89,12 +93,12 @@ def serialport_read_message(data):
 @sio.on('serialport:write')
 def serialport_write_message(data,sender):
     print("serialport:write=",data)
-    sio._send_packet(packet.Packet( packet.EVENT,
+    """sio._send_packet(packet.Packet( packet.EVENT,
                                 namespace=None,
                                 data=["close",SERIAL_PORT],
                                 id=None,
                                 binary=None))
-
+"""
 @sio.on('controller:settings')
 def controller_settings_message(controller,settings):
     print("controller:settings=",controller,settings)
