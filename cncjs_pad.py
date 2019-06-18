@@ -4,6 +4,7 @@ import time
 import evdev # pip3 install evdev
 from select import select
 from evdev import ecodes
+from math import floor
 
 class CNCjsPad:
 	'Manage keyboard events and generate associated gcode'
@@ -17,35 +18,35 @@ class CNCjsPad:
 
 		self.F_IGNORE_REPEAT=1
 		self.F_3TIME=2
-		self.ACTIONS=(	{'key':'KEY_0', 'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
-						{'key':'KEY_1', 'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
-						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_3', 'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':None					},
-						{'key':'KEY_4', 'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
-						{'key':'KEY_5', 'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
-						{'key':'KEY_6', 'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
-						{'key':'KEY_7', 'method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
-						{'key':'KEY_8', 'method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
-						{'key':'U', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
+		self.ACTIONS=(	{'key':'KEY_KPENTER', 'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
+						{'key':'KEY_0', 'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
+						{'key':'KEY_KP7', 	'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP1', 'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':self.F_3TIME					},
+						{'key':'KEY_KP0', 'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
+						{'key':'KEY_NUMLOCK', 'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
+						{'key':'KEY_KPSLASH', 'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
+						{'key':'KEY_KPASTERISK', 'method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
+						{'key':'KEY_BACKSPACE/', 'method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
+						{'key':'KEY_KPDOT', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
 						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
-						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['X',-1], 	'flag':None					},
-						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['X',+1], 	'flag':None					},
-						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',-1], 	'flag':None					},
-						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',+1], 	'flag':None					},
-						{'key':'KEY_KP9', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',-1], 	'flag':None					},
-						{'key':'KEY_KP3', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',+1], 	'flag':None					}
+						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
+						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
+						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
+						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
+						{'key':'KEY_KP9', 	'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
+						{'key':'KEY_KP3', 	'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					}
 					)
 
 		self.KEY_REPEAT_TIME=1.0
 		self.step_index=self.STEP_INCREMENTS.index(1.0)
-		self.tool_pos = {'X':0.0,'Y':0.0,'Z':0.0}
+		self.tool_pos = {'x':0.0,'y':0.0,'z':0.0}
 		self.prev_key = None
 		self.prev_key_time = None
 		self.cur_key = None
 		self.cur_key_time = None
 		self.key_rep_num = 0
-		self.gcode_Get_Position()
+		#self.gcode_Get_Position()
 
 		# init evdev
 
@@ -57,7 +58,19 @@ class CNCjsPad:
 		    self.devices.append(device)
 
 		self.fds = {dev.fd: dev for dev in self.devices}
-		print("devices=",self.devices)
+		#print("devices=",self.devices)
+
+
+	def gcode_Set_Position(self,pos={'xmin':0.0,'ymin':0.0,'zmin':0.0}):
+		'get x/y/z coordinates from cnc'
+		self.tool_pos['x']=float(pos['x'])
+		self.tool_pos['y']=float(pos['y'])
+		self.tool_pos['z']=float(pos['z'])
+		#print("tool_pos: %s" % self.tool_pos)
+
+	def gcode_Set_Limits(self,x,y,z):
+		self.CNC_LIMITS={'xmin':1.0-floor(float(x)), 'xmax':-1.0, 'ymin':1.0-floor(float(y)), 'ymax':-1.0, 'zmin':1.0-floor(float(z)), 'zmax':-1.0}
+		print("tool_limits: %s" % self.CNC_LIMITS)
 
 	def gcode_Get_Position(self):
 		'get x/y/z coordinates from cnc'
@@ -68,42 +81,59 @@ class CNCjsPad:
 
 	def gcode_Cycle_Start(self,foo):
 		'cyclestart'
+		print("cyclestart=",params)
 
 	def gcode_Feed_Hold(self,foo):
 		'feedhold'
+		print("feedhold")
 
 	def gcode_Homing(self,foo):
 		'homing'
-		print("Home called!")
+		print("homing")
 
 	def gcode_Sleep(self,foo):
 		'sleep'
+		print("sleep")
 
 	def gcode_Unlock(self,foo):
 		'unlock'
+		print("unlock")
 
 	def gcode_Start(self,foo):
 		'gcode:start'
+		print("gcode:start")
 
 	def gcode_Pause(self,foo):
 		'gcode:pause'
+		print("gcode:pause")
 
 	def gcode_Stop(self,foo):
 		'gcode:stop'
+		print("gcode:stop")
 
 	def gcode_Resume(self,foo):
 		'gcode:resume'
+		print("gcode:resume")
 
 	def gcode_Unload(self,foo):
 		'gcode:unload'
-		print("Unload called!")
+		print("gcode:unload")
 
 	def gcode_Move(self,args):
 
-		'gcode:G0 [X|Y|Z]<dir*step_size>'
+		'gcode:G53 [X|Y|Z]<dir*step_size>'
 		axis,dir=args
+		print(axis,dir,self.tool_pos,self.step_index)
 		self.tool_pos[axis]+=dir*self.STEP_INCREMENTS[self.step_index]
-		cmd="G0 X%f Y%f Z%f" % (self.tool_pos['X'],self.tool_pos['Y'],self.tool_pos['Z'])
+
+		if self.tool_pos[axis]<self.CNC_LIMITS[axis+'min']:
+			self.tool_pos[axis]=self.CNC_LIMITS[axis+'min']
+
+		if self.tool_pos[axis]>self.CNC_LIMITS[axis+'max']:
+			self.tool_pos[axis]=self.CNC_LIMITS[axis+'max']
+
+		#cmd="G53 X%f Y%f Z%f" % (self.tool_pos['x'],self.tool_pos['y'],self.tool_pos['z'])
+		cmd="G53 %s%f" % (axis.upper(),self.tool_pos[axis])
 		#print("new pos: %s" % tool_pos)
 		self.push_gcode(cmd)
 
@@ -165,7 +195,7 @@ class CNCjsPad:
 		else:
 			self.key_rep_num=1
 
-		print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
+		#print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
 		self.decode_key(self.cur_key)
 
 
