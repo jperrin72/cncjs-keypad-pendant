@@ -2,9 +2,9 @@
 
 import websocket
 import sys, asyncore
-import jwt
+import jwt # pip3 install pyjwt
 import logging
-import socketio # pip install "python-socketio[client]" / https://python-socketio.readthedocs.io/en/latest/client.html
+import socketio # pip3 install "python-socketio[client]" / https://python-socketio.readthedocs.io/en/latest/client.html
 from socketio import packet
 
 class CNCjsGrbl:
@@ -19,6 +19,7 @@ class CNCjsGrbl:
 		self.user_name="cncjs-pendant"
 		self.user_pass=""
 		self.workflow_state=''
+		self.active_state=''
 		self.ws_secret=secret
 		self.sio = socketio.Client(logger=True)
 		print(self,ip,port,serial,secret)
@@ -50,6 +51,8 @@ class CNCjsGrbl:
 		@self.sio.on('serialport:read')
 		def serialport_read_message(data):
 		    print("serialport:read",data)
+		    if (data=='ok'):
+		    	self.active_state='PacketOK'
 
 		@self.sio.on('serialport:change')
 		def serialport_read_message(data):
@@ -97,8 +100,10 @@ class CNCjsGrbl:
 		self.sio.connect('ws://'+self.server_ip+':'+str(self.server_port),headers={'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8'))})
 
 
-	def send(self,event,data=None):
+	def send(self,event,data=None,wait=False):
 
+		if (not wait):
+			self.active_state='PacketSent'
 		self.sio._send_packet(packet.Packet(	packet.EVENT,
 												namespace=None,
 												data=[event,self.serial_port,data],
@@ -106,8 +111,10 @@ class CNCjsGrbl:
 												binary=None))
 
 	def wait(self):
-		while (self.workflow_state!='idle'):
-			self.sio.sleep(0.1)
+		while (self.active_state not in ['Idle','Alarm','PacketOK']):
+			print("wait=",self.active_state)
+			self.sio.sleep(1)
+
 
 """
 'server_ip': '127.0.0.1',

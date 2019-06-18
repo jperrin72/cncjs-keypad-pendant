@@ -1,7 +1,7 @@
 #!/usr/local/bin/python3
 
 import time
-import evdev
+import evdev # pip3 install evdev
 from select import select
 from evdev import ecodes
 
@@ -19,7 +19,7 @@ class CNCjsPad:
 		self.F_3TIME=2
 		self.ACTIONS=(	{'key':'KEY_0', 'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
 						{'key':'KEY_1', 'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
-						{'key':'H', 	'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
 						{'key':'KEY_3', 'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':None					},
 						{'key':'KEY_4', 'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
 						{'key':'KEY_5', 'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
@@ -27,14 +27,14 @@ class CNCjsPad:
 						{'key':'KEY_7', 'method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
 						{'key':'KEY_8', 'method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
 						{'key':'U', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
-						{'key':'-', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
-						{'key':'+', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
-						{'key':'A', 	'method':CNCjsPad.gcode_Move, 			'params':['X',-1], 	'flag':None					},
-						{'key':'S', 	'method':CNCjsPad.gcode_Move, 			'params':['X',+1], 	'flag':None					},
-						{'key':'Q', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',-1], 	'flag':None					},
-						{'key':'Z', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',+1], 	'flag':None					},
-						{'key':'W', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',-1], 	'flag':None					},
-						{'key':'X', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',+1], 	'flag':None					}
+						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
+						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
+						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['X',-1], 	'flag':None					},
+						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['X',+1], 	'flag':None					},
+						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',-1], 	'flag':None					},
+						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['Y',+1], 	'flag':None					},
+						{'key':'KEY_KP9', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',-1], 	'flag':None					},
+						{'key':'KEY_KP3', 	'method':CNCjsPad.gcode_Move, 			'params':['Z',+1], 	'flag':None					}
 					)
 
 		self.KEY_REPEAT_TIME=1.0
@@ -57,7 +57,7 @@ class CNCjsPad:
 		    self.devices.append(device)
 
 		self.fds = {dev.fd: dev for dev in self.devices}
-
+		print("devices=",self.devices)
 
 	def gcode_Get_Position(self):
 		'get x/y/z coordinates from cnc'
@@ -118,6 +118,7 @@ class CNCjsPad:
 
 	def decode_key(self,key):
 		action=''
+		print('key=',key)
 		for action in [rec for rec in self.ACTIONS if rec['key'] == key]:
 			pass
 		#print(action)
@@ -150,7 +151,6 @@ class CNCjsPad:
 			for event in self.fds[dev.fd].read(): 
 				if event.value==1 and event.type==ecodes.EV_KEY: # key down / key event
 					self.cur_key=ecodes.KEY[event.code]
-					print(self.cur_key)
 					#dev.set_led(ecodes.LED_NUML, 1)
 
 		self.cur_key_time = time.time()
