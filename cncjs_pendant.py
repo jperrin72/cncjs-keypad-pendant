@@ -6,7 +6,6 @@ from pathlib import Path
 from cncjs_grbl import CNCjsGrbl
 from cncjs_pad import CNCjsPad
 
-
 class CNCjsPendant:
 	'Python pendant for CncJs'
 
@@ -19,18 +18,18 @@ class CNCjsPendant:
 		self.grbl=CNCjsGrbl(ip,port,serial,secret)
 		self.pad=CNCjsPad()
 
+	def connect(self):
+		self.grbl.connect()
+		self.grbl.wait()
+		#pendant.grbl.disconnect()
+		self.pad.gcode_Set_Limits(x=self.grbl.controller_settings['settings']['$130'],y=self.grbl.controller_settings['settings']['$131'],z=self.grbl.controller_settings['settings']['$132'])
+		self.pad.gcode_Set_Position(pos=self.grbl.controller_state['status']['mpos'])
+
+
 #pendant= CNCjsPendant(serial='/dev/tty.MALS')
 pendant= CNCjsPendant(local=False, ip='192.168.0.19',secret='$2a$10$IYnT/KjMHedGJUqaS.riNe')
-pendant.grbl.connect()
-pendant.grbl.wait()
-pendant.grbl.send(event="write",data="$H\r")
-pendant.grbl.wait()
-pendant.grbl.send(event="write",data="$$\r")
-pendant.grbl.wait()
-#pendant.grbl.disconnect()
+pendant.connect()
 print(vars(pendant.grbl))
-
-# main program
-
-while (True):
+#
+while True:
 	pendant.pad.get_key_press()
