@@ -137,3 +137,4 @@ class CNCjsGrbl:
 'sender_status': 	{'sp': 1, 'hold': False, 'holdReason': None, 'name': '', 'context': {}, 'size': 0, 'total': 0, 'sent': 0, 'received': 0, 'startTime': 0, 'finishTime': 0, 'elapsedTime': 0, 'remainingTime': 0},
 'workflow_state': 'idle'}
 """
+
