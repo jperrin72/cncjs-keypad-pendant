@@ -7,6 +7,7 @@ import logging
 import socketio # pip install "python-socketio[client]" / https://python-socketio.readthedocs.io/en/latest/client.html
 from socketio import packet
 
+
 """
 connect
 startup= {'loadedControllers': ['Grbl', 'Marlin', 'Smoothie', 'TinyG'], 'baudrates': [], 'ports': []}
