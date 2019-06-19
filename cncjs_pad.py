@@ -31,6 +31,7 @@ class CNCjsPad:
 						{'key':'KEY_KPDOT', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
 						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
+						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Reset, 			'params':None, 		'flag':self.F_3TIME			},
 						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
 						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
 						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
@@ -84,46 +85,71 @@ class CNCjsPad:
 	def gcode_Cycle_Start(self,foo):
 		'cyclestart'
 		print("cyclestart")
+		cmd="~\n"
+		self.push_gcode(cmd)
 
 	def gcode_Feed_Hold(self,foo):
 		'feedhold'
 		print("feedhold")
+		cmd="!\n"
+		self.push_gcode(cmd)
 
 	def gcode_Homing(self,foo):
 		'homing'
 		print("homing")
 		cmd="$H\n"
 		self.push_gcode(cmd)
-
+		cmd="?\n"
+		self.push_gcode(cmd)
 
 	def gcode_Sleep(self,foo):
 		'sleep'
 		print("sleep")
+		cmd="$SLP\n"
+		self.push_gcode(cmd)
 
 	def gcode_Unlock(self,foo):
 		'unlock'
 		print("unlock")
+		cmd="$X\n"
+		self.push_gcode(cmd)
+	
+	def gcode_Reset(self,foo):
+		'reset'
+		print("reset")
+		cmd="\x18\n"
+		self.push_gcode(cmd)
 
 	def gcode_Start(self,foo):
 		'gcode:start'
 		print("gcode:start")
+		cmd="gcode:start\n"
+		self.push_gcode(cmd)
 
 	def gcode_Pause(self,foo):
 		'gcode:pause'
 		print("gcode:pause")
+		cmd="gcode:pause\n"
+		self.push_gcode(cmd)
 
 	def gcode_Stop(self,foo):
 		'gcode:stop'
 		print("gcode:stop")
-
+		cmd="gcode:stop\n"
+		self.push_gcode(cmd)
+		
 	def gcode_Resume(self,foo):
 		'gcode:resume'
 		print("gcode:resume")
-
+		cmd="gcode:resume\n"
+		self.push_gcode(cmd)
+		
 	def gcode_Unload(self,foo):
 		'gcode:unload'
 		print("gcode:unload")
-
+		cmd="gcode:unload\n"
+		self.push_gcode(cmd)
+		
 	def gcode_Move(self,args):
 
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
@@ -213,7 +239,7 @@ class CNCjsPad:
 			else:
 				self.key_rep_num=1
 
-			#print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
+			print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
 			self.decode_key(self.cur_key)
 
 
