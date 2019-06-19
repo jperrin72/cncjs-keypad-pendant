@@ -34,7 +34,7 @@ print(vars(pendant.grbl))
 while True:
 	pendant.pad.get_key_press()
 	if pendant.pad.gcode_ready():
-		gcode=pendant.pad.gcode_queue.pop()
+		message=pendant.pad.gcode_queue.pop()
 		#print("gcode:",gcode)
-		pendant.grbl.send(event='write',data=gcode,wait=True)
+		pendant.grbl.send(event=message['event'],data=message['data'],wait=message['wait'])
 		pendant.grbl.wait()

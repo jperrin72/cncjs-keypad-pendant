@@ -19,25 +19,27 @@ class CNCjsPad:
 
 		self.F_IGNORE_REPEAT=1
 		self.F_3TIME=2
-		self.ACTIONS=(	{'key':'KEY_KPENTER', 'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
-						{'key':'KEY_0', 'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
-						{'key':'KEY_KP7', 	'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_KP1', 'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':self.F_3TIME					},
-						{'key':'KEY_KP0', 'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
-						{'key':'KEY_NUMLOCK', 'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
-						{'key':'KEY_KPSLASH', 'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
-						{'key':'KEY_KPASTERISK', 'method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
-						{'key':'KEY_BACKSPACE/', 'method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
+		self.ACTIONS=(	{'key':'KEY_KPENTER',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
+						{'key':'KEY_0',         'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
+						{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP1',       'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP0',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
+						{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
+						{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
+						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
+						{'key':'KEY_BACKSPACE/','method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
 						{'key':'KEY_KPDOT', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
 						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
 						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Reset, 			'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
-						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
-						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
-						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
-						{'key':'KEY_KP9', 	'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
-						{'key':'KEY_KP3', 	'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					}
+						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Start, 			'params':'Halt', 	'flag':self.F_3TIME			},
+						{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
+						{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
+						{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
+						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
+						{'key':'KEY_KP5', 	    'method':CNCjsPad.gcode_SetHome, 		'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP9', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
+						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					}
 					)
 
 		self.KEY_REPEAT_TIME=1.0
@@ -85,73 +87,71 @@ class CNCjsPad:
 	def gcode_Cycle_Start(self,foo):
 		'cyclestart'
 		print("cyclestart")
-		cmd="~\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='~\n',wait=False)
 
 	def gcode_Feed_Hold(self,foo):
 		'feedhold'
 		print("feedhold")
-		cmd="!\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='!\n',wait=False)
 
 	def gcode_Homing(self,foo):
 		'homing'
 		print("homing")
-		cmd="$H\n"
-		self.push_gcode(cmd)
-		cmd="?\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='$H\n',wait=True)
+		self.push_gcode(data='?\n',wait=True)
 
 	def gcode_Sleep(self,foo):
 		'sleep'
 		print("sleep")
-		cmd="$SLP\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='$SLP\n',wait=False)
 
 	def gcode_Unlock(self,foo):
 		'unlock'
 		print("unlock")
-		cmd="$X\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='$X\n',wait=False)
 	
 	def gcode_Reset(self,foo):
 		'reset'
 		print("reset")
-		cmd="\x18\n"
-		self.push_gcode(cmd)
+		self.push_gcode(data='\x18',wait=False)
 
 	def gcode_Start(self,foo):
 		'gcode:start'
 		print("gcode:start")
-		cmd="gcode:start\n"
-		self.push_gcode(cmd)
+		self.push_gcode(event='command',data='gcode:start',wait=False)
 
 	def gcode_Pause(self,foo):
 		'gcode:pause'
 		print("gcode:pause")
-		cmd="gcode:pause\n"
-		self.push_gcode(cmd)
+		self.push_gcode(event='command',data='gcode:pause',wait=False)
 
 	def gcode_Stop(self,foo):
 		'gcode:stop'
 		print("gcode:stop")
-		cmd="gcode:stop\n"
-		self.push_gcode(cmd)
+		self.push_gcode(event='command',data='gcode:stop',wait=False)
 		
 	def gcode_Resume(self,foo):
 		'gcode:resume'
 		print("gcode:resume")
-		cmd="gcode:resume\n"
-		self.push_gcode(cmd)
+		self.push_gcode(event='command',data='gcode:resume',wait=False)
 		
 	def gcode_Unload(self,foo):
 		'gcode:unload'
 		print("gcode:unload")
-		cmd="gcode:unload\n"
-		self.push_gcode(cmd)
+		self.push_gcode(event='command',data='gcode:unload',wait=False)
+
+	def gcode_SetHome(self,foo):
+		'set working home position'
+		print("gcode:sethome")
+		self.push_gcode(data='G10 L20 P1 X0 Y0 Z0\n',wait=True)
+		self.push_gcode(data='?\n',wait=True)
+
+	def task_Start(self,data):
+		'task:start'
+		print("task:start=",data)
+		self.push_gcode(event='task',data=data,wait=False)
 		
 	def gcode_Move(self,args):
-
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
 		axis,dir=args
 		#print(axis,dir,self.tool_pos,self.step_index)
@@ -163,9 +163,8 @@ class CNCjsPad:
 		if self.tool_pos[axis]>self.CNC_LIMITS[axis+'max']:
 			self.tool_pos[axis]=self.CNC_LIMITS[axis+'max']
 
-		#cmd="G53 X%f Y%f Z%f" % (self.tool_pos['x'],self.tool_pos['y'],self.tool_pos['z'])
-		cmd="G53 %s%f\n" % (axis.upper(),self.tool_pos[axis])
-		self.push_gcode(cmd)
+		gcode="G53 %s%f\n" % (axis.upper(),self.tool_pos[axis])
+		self.push_gcode(data=gcode,wait=False)
 
 	def Step_Size(self,dir):
 		'set step size mm'
@@ -196,9 +195,10 @@ class CNCjsPad:
 				action['method'](self,action['params'])
 
 
-	def push_gcode(self,gcode):
+	def push_gcode(self,event='write',data=None,wait=True):
 		'push a command into gcode buffer'
-		self.gcode_queue.append(gcode)
+		message={'event':event,'data':data,'wait':wait}
+		self.gcode_queue.append(message)
 		#print("gcode: %s" % gcode)
 
 	def gcode_ready(self):
@@ -207,9 +207,9 @@ class CNCjsPad:
 
 	def pop_gcode(self):
 		'pop a command from gcode buffer'
-		gcode = self.gcode_queue.popleft()
-		#print("gcode: %s" % gcode)
-		return gcode
+		message = self.gcode_queue.popleft()
+		print("message: %s" % message)
+		return message
 
 	def get_key_press(self):
 
