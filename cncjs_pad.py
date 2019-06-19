@@ -83,7 +83,7 @@ class CNCjsPad:
 
 	def gcode_Cycle_Start(self,foo):
 		'cyclestart'
-		print("cyclestart=",params)
+		print("cyclestart")
 
 	def gcode_Feed_Hold(self,foo):
 		'feedhold'
@@ -182,7 +182,7 @@ class CNCjsPad:
 	def pop_gcode(self):
 		'pop a command from gcode buffer'
 		gcode = self.gcode_queue.popleft()
-		print("gcode: %s" % gcode)
+		#print("gcode: %s" % gcode)
 		return gcode
 
 	def get_key_press(self):
