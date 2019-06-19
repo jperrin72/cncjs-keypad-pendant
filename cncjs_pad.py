@@ -2,6 +2,7 @@
 
 import time
 import evdev # pip3 install evdev
+from collections import deque
 from select import select
 from evdev import ecodes
 from math import floor
@@ -32,8 +33,8 @@ class CNCjsPad:
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
 						{'key':'KEY_KP4', 	'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
 						{'key':'KEY_KP6', 	'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
-						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
-						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
+						{'key':'KEY_KP8', 	'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
+						{'key':'KEY_KP2', 	'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
 						{'key':'KEY_KP9', 	'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
 						{'key':'KEY_KP3', 	'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					}
 					)
@@ -46,6 +47,7 @@ class CNCjsPad:
 		self.cur_key = None
 		self.cur_key_time = None
 		self.key_rep_num = 0
+		self.gcode_queue = deque('')
 		#self.gcode_Get_Position()
 
 		# init evdev
@@ -90,6 +92,9 @@ class CNCjsPad:
 	def gcode_Homing(self,foo):
 		'homing'
 		print("homing")
+		cmd="$H\n"
+		self.push_gcode(cmd)
+
 
 	def gcode_Sleep(self,foo):
 		'sleep'
@@ -123,7 +128,7 @@ class CNCjsPad:
 
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
 		axis,dir=args
-		print(axis,dir,self.tool_pos,self.step_index)
+		#print(axis,dir,self.tool_pos,self.step_index)
 		self.tool_pos[axis]+=dir*self.STEP_INCREMENTS[self.step_index]
 
 		if self.tool_pos[axis]<self.CNC_LIMITS[axis+'min']:
@@ -133,8 +138,7 @@ class CNCjsPad:
 			self.tool_pos[axis]=self.CNC_LIMITS[axis+'max']
 
 		#cmd="G53 X%f Y%f Z%f" % (self.tool_pos['x'],self.tool_pos['y'],self.tool_pos['z'])
-		cmd="G53 %s%f" % (axis.upper(),self.tool_pos[axis])
-		#print("new pos: %s" % tool_pos)
+		cmd="G53 %s%f\n" % (axis.upper(),self.tool_pos[axis])
 		self.push_gcode(cmd)
 
 	def Step_Size(self,dir):
@@ -148,7 +152,7 @@ class CNCjsPad:
 
 	def decode_key(self,key):
 		action=''
-		print('key=',key)
+		#print('key=',key)
 		for action in [rec for rec in self.ACTIONS if rec['key'] == key]:
 			pass
 		#print(action)
@@ -168,10 +172,22 @@ class CNCjsPad:
 
 	def push_gcode(self,gcode):
 		'push a command into gcode buffer'
+		self.gcode_queue.append(gcode)
+		#print("gcode: %s" % gcode)
+
+	def gcode_ready(self):
+		'return True if gcode is ready for processing'
+		return (len(self.gcode_queue)>0)
+
+	def pop_gcode(self):
+		'pop a command from gcode buffer'
+		gcode = self.gcode_queue.popleft()
 		print("gcode: %s" % gcode)
+		return gcode
 
 	def get_key_press(self):
 
+		keypress=False
 		self.prev_key = self.cur_key
 		self.prev_key_time = self.cur_key_time
 		#self.cur_key  = input()
@@ -181,22 +197,24 @@ class CNCjsPad:
 			for event in self.fds[dev.fd].read(): 
 				if event.value==1 and event.type==ecodes.EV_KEY: # key down / key event
 					self.cur_key=ecodes.KEY[event.code]
+					keypress=True
 					#dev.set_led(ecodes.LED_NUML, 1)
 
-		self.cur_key_time = time.time()
+		if (keypress):
+			self.cur_key_time = time.time()
 
-		if self.prev_key_time is None:
-			self.key_delta_time = 0.0
-		else:
-			self.key_delta_time = self.cur_key_time - self.prev_key_time 
+			if self.prev_key_time is None:
+				self.key_delta_time = 0.0
+			else:
+				self.key_delta_time = self.cur_key_time - self.prev_key_time 
 
-		if (self.cur_key == self.prev_key) and (self.key_delta_time<=self.KEY_REPEAT_TIME):
-			self.key_rep_num+=1
-		else:
-			self.key_rep_num=1
+			if (self.cur_key == self.prev_key) and (self.key_delta_time<=self.KEY_REPEAT_TIME):
+				self.key_rep_num+=1
+			else:
+				self.key_rep_num=1
 
-		#print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
-		self.decode_key(self.cur_key)
+			#print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
+			self.decode_key(self.cur_key)
 
 
 
