@@ -1,11 +1,49 @@
 #!/usr/local/bin/python3
 
 import time
+import sys
 import evdev # pip3 install evdev
 from collections import deque
 from select import select
 from evdev import ecodes
 from math import floor
+from threading import Thread, RLock
+
+class CNCjsPadLed(Thread):
+
+	def __init__(self):
+		'thread to manage led'
+		Thread.__init__(self)
+		self.LED_SEQ=(	{'state':'Off', 	'sequence':0b00000000000000000000000000000000, 'repeat': False	},
+						{'state':'On',		'sequence':0b11111111111111111111111111111111, 'repeat': True	},
+						{'state':'Sleep',	'sequence':0b01111111111111111111111111111111, 'repeat': True	},
+						{'state':'Hold',	'sequence':0b00111111111111111111111111111111, 'repeat': True	},
+						{'state':'Idle',	'sequence':0b11111111111111110000000000000000, 'repeat': True	},
+						{'state':'Alarm', 	'sequence':0b11100111001110011111111111111100, 'repeat': True	},
+						{'state':'Halt', 	'sequence':0b10101010101010101010101010101010, 'repeat': True	}
+					)
+
+		self.set_led_sequence('Sleep')
+		self.dev=None
+
+	def set_led_sequence(self,state='Off'):
+		'set current animation sequence for led'
+		self.led_sequence=list(filter(lambda seq: seq['state'] == state, self.LED_SEQ))[0]
+		print('led_sequence=',self.led_sequence['state'])
+
+	def set_dev(self,dev=None):
+		if (self.dev==None):
+			self.dev=dev
+			print('dev=',dev)
+
+	def run(self):
+		'animate led according to sequence (period=1s)'
+		while (True):
+			index=int(32.0*(time.time()%1))
+			led=(self.led_sequence['sequence']>>index)&1
+			if self.dev is not None:
+				self.dev.set_led(ecodes.LED_NUML, led)
+			time.sleep(1.0/64)
 
 class CNCjsPad:
 	'Manage keyboard events and generate associated gcode'
@@ -51,6 +89,9 @@ class CNCjsPad:
 		self.cur_key_time = None
 		self.key_rep_num = 0
 		self.gcode_queue = deque('')
+		self.led = CNCjsPadLed()
+		self.led.start()
+
 		#self.gcode_Get_Position()
 
 		# init evdev
@@ -64,7 +105,6 @@ class CNCjsPad:
 
 		self.fds = {dev.fd: dev for dev in self.devices}
 		#print("devices=",self.devices)
-
 
 	def gcode_Set_Position(self,pos={'xmin':0.0,'ymin':0.0,'zmin':0.0}):
 		'get x/y/z coordinates from cnc'
@@ -224,6 +264,7 @@ class CNCjsPad:
 				if event.value==1 and event.type==ecodes.EV_KEY: # key down / key event
 					self.cur_key=ecodes.KEY[event.code]
 					keypress=True
+					self.led.set_dev(dev)
 					#dev.set_led(ecodes.LED_NUML, 1)
 
 		if (keypress):

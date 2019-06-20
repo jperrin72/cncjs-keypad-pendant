@@ -35,7 +35,7 @@ class CNCjsGrbl:
 		@self.sio.on('connect')
 		def connect_message():
 		    ''
-		    #print("connect")
+		    print("connect")
 
 		@self.sio.on('startup')
 		def open_startup(data):
@@ -49,29 +49,29 @@ class CNCjsGrbl:
 		@self.sio.on('serialport:close')
 		def serialport_close_message(data):
 		    ''
-		    #print("serialport:close")
+		    print("serialport:close")
 
 		@self.sio.on('serialport:error')
 		def serialport_error_message(data):
 		    ''
-		    #print("serialport:error",data)
+		    print("serialport:error",data)
 
 		@self.sio.on('serialport:read')
 		def serialport_read_message(data):
 		    ''
-		    #print("serialport:read",data)
+		    print("serialport:read",data)
 		    if (data=='ok'):
 		    	self.active_state='PacketOK'
 
 		@self.sio.on('serialport:change')
 		def serialport_read_message(data):
 		    ''
-		    #print("serialport:change",data)
+		    print("serialport:change",data)
 
 		@self.sio.on('serialport:write')
 		def serialport_write_message(data,sender):
 			''
-			#print("serialport:write=",data)
+			print("serialport:write=",data)
 
 		@self.sio.on('controller:settings')
 		def controller_settings_message(controller,settings):
@@ -81,13 +81,13 @@ class CNCjsGrbl:
 		def grbl_state_message(state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
-		    #print("activeState=",self.active_state)
+		    print("activeState=",self.active_state)
 
 		@self.sio.on('controller:state')
 		def controller_state_message(controller,state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
-		    #print("activeState=",self.active_state)
+		    print("activeState=",self.active_state)
 
 		@self.sio.on('workflow:state')
 		def workflow_state_message(state):
@@ -122,8 +122,8 @@ class CNCjsGrbl:
 												binary=None))
 
 	def wait(self):
-		while (self.active_state not in ['Idle','Alarm','PacketOK']):
-			#print("wait=",self.active_state)
+		while (self.active_state not in ['Idle','Alarm','PacketOK','Hold','Sleep']):
+			print("wait=",self.active_state)
 			self.sio.sleep(0.05)
 
 
