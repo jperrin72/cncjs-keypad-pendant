@@ -20,11 +20,16 @@ class CNCjsPadLed(Thread):
 						{'state':'Hold',	'sequence':0b00111111111111111111111111111111, 'repeat': True	},
 						{'state':'Idle',	'sequence':0b11111111111111110000000000000000, 'repeat': True	},
 						{'state':'Alarm', 	'sequence':0b11100111001110011111111111111100, 'repeat': True	},
-						{'state':'Halt', 	'sequence':0b10101010101010101010101010101010, 'repeat': True	}
+						{'state':'Task', 	'sequence':0b10101010101010101010101010101010, 'repeat': True	}
 					)
 
 		self.set_led_sequence('Sleep')
 		self.dev=None
+
+	def get_led_sequence(self):
+		'get current animation sequence for led'
+		print('led_sequence=',self.led_sequence['state'])
+		return self.led_sequence['state']
 
 	def set_led_sequence(self,state='Off'):
 		'set current animation sequence for led'
@@ -57,27 +62,30 @@ class CNCjsPad:
 
 		self.F_IGNORE_REPEAT=1
 		self.F_3TIME=2
-		self.ACTIONS=(	{'key':'KEY_KPENTER',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					},
-						{'key':'KEY_0',         'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					},
-						{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_KP1',       'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_KP0',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
+		self.ACTIONS=(
+						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.task_Macro, 			'params':'Go Home', 'flag':self.F_3TIME			},
+						{'key':'KEY_TAB', 		'method':CNCjsPad.task_Macro, 			'params':'Tool up', 'flag':self.F_3TIME			},
+						{'key':'KEY_MAIL', 		'method':CNCjsPad.gcode_Reset, 			'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Command,			'params':'Halt', 	'flag':self.F_3TIME			},
 						{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
 						{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
 						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
 						{'key':'KEY_BACKSPACE/','method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
-						{'key':'KEY_KPDOT', 	'method':CNCjsPad.gcode_Unload, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
-						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
-						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
-						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Reset, 			'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Command,			'params':'Halt', 	'flag':self.F_3TIME			},
-						{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
-						{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
+						{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
 						{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
-						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
-						{'key':'KEY_KP5', 	    'method':CNCjsPad.gcode_SetHome, 		'params':None, 		'flag':self.F_3TIME			},
 						{'key':'KEY_KP9', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
-						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					}
+						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
+						{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
+						{'key':'KEY_KP5', 	    'method':CNCjsPad.gcode_SetHome, 		'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
+						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
+						{'key':'KEY_KP1',       'method':CNCjsPad.gcode_Sleep, 			'params':None, 		'flag':self.F_3TIME			},
+						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 	'flag':None					},
+						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 	'flag':None					},
+						{'key':'KEY_KP0',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 		'flag':None					},
+						{'key':'KEY_0',         'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 		'flag':None					}, #key 000
+						{'key':'KEY_KPDOT', 	'method':CNCjsPad.task_Laser_Test, 		'params':None, 		'flag':self.F_IGNORE_REPEAT	},
+						{'key':'KEY_KPENTER',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 		'flag':None					}
 					)
 
 		self.KEY_REPEAT_TIME=1.0
@@ -188,13 +196,28 @@ class CNCjsPad:
 
 	def task_Command(self,title):
 		'command:start'
+		led=self.led.get_led_sequence()
+		self.led.set_led_sequence('Task')
 		print("command:start=",title)
 		self.push_gcode(event='command:start',data=title,wait=False)
+		self.led.set_led_sequence(led)
 
 	def task_Macro(self,title):
 		'command:start'
+		led=self.led.get_led_sequence()
+		self.led.set_led_sequence('Task')
 		print("macro:start=",title)
 		self.push_gcode(event='macro:start',data=title,wait=False)
+		self.led.set_led_sequence(led)
+
+
+	def task_Laser_Test(self,foo):
+		'lasertest:on'
+		'''
+		42["command","/dev/ttyUSB0","lasertest:on",1,100,1000]
+		'''
+		print("lasertest:on")
+		self.push_gcode(event='command',data='lasertest:on',wait=True)
 
 	def gcode_Move(self,args):
 		'gcode:G53 [X|Y|Z]<dir*step_size>'

@@ -140,20 +140,22 @@ class CNCjsGrbl:
 	def send(self,event,data=None,wait=False):
 
 		if event=='command:start':
-			self.run_cmd(data)
 			print("run command:"+data)
+			self.run_cmd(data)
 		if event=='macro:start':
-			#self.run_cmd(data)
 			print("run macro:"+data)
+			self.run_macro(data)
 		else:
 			if (wait):
 				self.active_state='PacketSent'
+			if isinstance(data,list):
+				data=','.join([str(i) for i in data])
 			self.sio._send_packet(packet.Packet(	packet.EVENT,
 													namespace=None,
 													data=[event,self.serial_port,data],
 													id=None,
 													binary=None))
-
+			print("send:"+str([event,self.serial_port,data]))
 	def run_cmd(self, title):
 		'lookup command and start through http api'
 
@@ -194,6 +196,18 @@ class CNCjsGrbl:
 											'content-type': 'application/json'
 											},data=self.http_token)
 			return self.request.json()
+
+		return None
+
+	def run_macro(self, name):
+		'lookup macro and start through http api'
+
+		print("run macro!")
+		if self.api is not None:
+			for macro in [rec for rec in self.api['records'] if rec['name'] == name]:
+				pass
+			print('macro:',str(macro))
+			self.send(event='write',data=macro['command']+'\n',wait=True)
 
 		return None
 
