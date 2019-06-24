@@ -70,7 +70,7 @@ class CNCjsPad:
 						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 		'flag':None					},
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 		'flag':None					},
 						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.gcode_Reset, 			'params':None, 		'flag':self.F_3TIME			},
-						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Start, 			'params':'Halt', 	'flag':self.F_3TIME			},
+						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Command,			'params':'Halt', 	'flag':self.F_3TIME			},
 						{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 	'flag':None					},
 						{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 	'flag':None					},
 						{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
@@ -186,11 +186,16 @@ class CNCjsPad:
 		self.push_gcode(data='G10 L20 P1 X0 Y0 Z0\n',wait=True)
 		self.push_gcode(data='?\n',wait=True)
 
-	def task_Start(self,data):
-		'task:start'
-		print("task:start=",data)
-		self.push_gcode(event='task',data=data,wait=False)
-		
+	def task_Command(self,title):
+		'command:start'
+		print("command:start=",title)
+		self.push_gcode(event='command:start',data=title,wait=False)
+
+	def task_Macro(self,title):
+		'command:start'
+		print("macro:start=",title)
+		self.push_gcode(event='macro:start',data=title,wait=False)
+
 	def gcode_Move(self,args):
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
 		axis,dir=args

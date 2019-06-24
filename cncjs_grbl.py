@@ -52,7 +52,6 @@ class CNCjsGrbl:
 		self.commands=self.request.json()
 		self.request = self.session.get('http://'+self.server_ip+':'+str(self.server_port)+'/api/mdi',params={'token':'{}'.format(self.http_token)})
 		self.api=self.request.json()
-		self.run_cmd('Halt')
 
 	def connect(self):
 
@@ -140,13 +139,20 @@ class CNCjsGrbl:
 
 	def send(self,event,data=None,wait=False):
 
-		if (wait):
-			self.active_state='PacketSent'
-		self.sio._send_packet(packet.Packet(	packet.EVENT,
-												namespace=None,
-												data=[event,self.serial_port,data],
-												id=None,
-												binary=None))
+		if event=='command:start':
+			self.run_cmd(data)
+			print("run command:"+data)
+		if event=='macro:start':
+			#self.run_cmd(data)
+			print("run macro:"+data)
+		else:
+			if (wait):
+				self.active_state='PacketSent'
+			self.sio._send_packet(packet.Packet(	packet.EVENT,
+													namespace=None,
+													data=[event,self.serial_port,data],
+													id=None,
+													binary=None))
 
 	def run_cmd(self, title):
 		'lookup command and start through http api'
