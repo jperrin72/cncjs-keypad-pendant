@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 #!/usr/local/bin/python3
 
-import json
 from pathlib import Path
 from cncjs_grbl import CNCjsGrbl
 from cncjs_pad import CNCjsPad
@@ -38,3 +37,4 @@ while True:
 		#print("gcode:",gcode)
 		pendant.grbl.send(event=message['event'],data=message['data'],wait=message['wait'])
 		pendant.grbl.wait()
+

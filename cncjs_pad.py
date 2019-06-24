@@ -70,7 +70,7 @@ class CNCjsPad:
 						{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Start, 			'params':None, 		'flag':None					},
 						{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 		'flag':None					},
 						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Stop, 			'params':None, 		'flag':None					},
-						{'key':'KEY_BACKSPACE/','method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
+						{'key':'KEY_BACKSPACE', 'method':CNCjsPad.gcode_Resume, 		'params':None, 		'flag':None					},
 						{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 		'flag':self.F_3TIME			},
 						{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 	'flag':None					},
 						{'key':'KEY_KP9', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 	'flag':None					},
@@ -146,7 +146,6 @@ class CNCjsPad:
 		'homing'
 		print("homing")
 		self.push_gcode(data='$H\n',wait=True)
-		self.push_gcode(data='?\n',wait=True)
 
 	def gcode_Sleep(self,foo):
 		'sleep'
@@ -191,8 +190,7 @@ class CNCjsPad:
 	def gcode_SetHome(self,foo):
 		'set working home position'
 		print("gcode:sethome")
-		self.push_gcode(data='G10 L20 P1 X0 Y0 Z0\n',wait=True)
-		self.push_gcode(data='?\n',wait=True)
+		self.push_gcode(data='G10 L20 P1 X0 Y0 Z0\n?\n',wait=True)
 
 	def task_Command(self,title):
 		'command:start'
@@ -214,10 +212,12 @@ class CNCjsPad:
 	def task_Laser_Test(self,foo):
 		'lasertest:on'
 		'''
-		42["command","/dev/ttyUSB0","lasertest:on",1,100,1000]
+		42["command","/dev/ttyUSB0","lasertest:on",power,waitms,maxpower]
 		'''
 		print("lasertest:on")
-		self.push_gcode(event='command',data='lasertest:on',wait=True)
+		self.push_gcode(event='command',data=["lasertest:on",1,250,100],wait=True)
+
+
 
 	def gcode_Move(self,args):
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
@@ -231,7 +231,7 @@ class CNCjsPad:
 		if self.tool_pos[axis]>self.CNC_LIMITS[axis+'max']:
 			self.tool_pos[axis]=self.CNC_LIMITS[axis+'max']
 
-		gcode="G53 %s%f\n" % (axis.upper(),self.tool_pos[axis])
+		gcode="G53 %s%f F1000\n" % (axis.upper(),self.tool_pos[axis])
 		self.push_gcode(data=gcode,wait=False)
 
 	def Step_Size(self,dir):

@@ -7,6 +7,7 @@ import jwt # pip3 install pyjwt
 import logging
 import socketio # pip3 install "python-socketio[client]" / https://python-socketio.readthedocs.io/en/latest/client.html
 from socketio import packet
+from json import dumps
 
 class CNCjsGrbl:
 	'Implement communication through websockets to Grbl'
@@ -22,6 +23,8 @@ class CNCjsGrbl:
 		self.workflow_state=''
 		self.active_state=''
 		self.ws_secret=secret
+		self.ws_url='ws://'+self.server_ip+':'+str(self.server_port)
+		self.http_url='http://'+self.server_ip+':'+str(self.server_port)
 		#self.sio = socketio.Client(logger=True)
 		self.sio = socketio.Client(logger=False)
 		print(self,ip,port,serial,secret)
@@ -40,17 +43,17 @@ class CNCjsGrbl:
 
 		self.session=requests.session()
 		auth_token='{"token":"'+'{}'.format(self.access_token.decode('utf-8'))+'"}'
-		self.request = self.session.post(	'http://'+self.server_ip+':'+str(self.server_port)+'/api/signin',
+		self.request = self.session.post(	self.http_url+'/api/signin',
 											headers={
 											'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8')),
 											'content-type': 'application/json'
 											},data=auth_token)
 		self.http_token=self.request.json()['token']
-		self.request = self.session.get('http://'+self.server_ip+':'+str(self.server_port)+'/api/machines',params={'token':'{}'.format(self.http_token)})
+		self.request = self.session.get(self.http_url+'/api/machines',params={'token':'{}'.format(self.http_token)})
 		self.machine=self.request.json()
-		self.request = self.session.get('http://'+self.server_ip+':'+str(self.server_port)+'/api/commands',params={'token':'{}'.format(self.http_token)})
+		self.request = self.session.get(self.http_url+'/api/commands',params={'token':'{}'.format(self.http_token)})
 		self.commands=self.request.json()
-		self.request = self.session.get('http://'+self.server_ip+':'+str(self.server_port)+'/api/mdi',params={'token':'{}'.format(self.http_token)})
+		self.request = self.session.get(self.http_url+'/api/mdi',params={'token':'{}'.format(self.http_token)})
 		self.api=self.request.json()
 
 	def connect(self):
@@ -107,13 +110,13 @@ class CNCjsGrbl:
 		def grbl_state_message(state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
-		    print("activeState=",self.active_state)
+		    print("Grbl activeState=",self.active_state,self.controller_state['status']['mpos'])
 
 		@self.sio.on('controller:state')
 		def controller_state_message(controller,state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
-		    print("activeState=",self.active_state)
+		    ##print("Ctrl activeState=",self.active_state,self.controller_state['status']['mpos'])
 
 		@self.sio.on('workflow:state')
 		def workflow_state_message(state):
@@ -134,7 +137,7 @@ class CNCjsGrbl:
 		# connect to websocket service
 		self.access_token = jwt.encode({'id': self.user_id, 'name': self.user_name}, self.ws_secret, algorithm='HS256')
 		self.access_token_url_string = "{}".format(self.access_token.decode('utf-8'))
-		self.sio.connect('ws://'+self.server_ip+':'+str(self.server_port),headers={'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8'))})
+		self.sio.connect(self.ws_url,headers={'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8'))})
 
 
 	def send(self,event,data=None,wait=False):
@@ -149,13 +152,16 @@ class CNCjsGrbl:
 			if (wait):
 				self.active_state='PacketSent'
 			if isinstance(data,list):
-				data=','.join([str(i) for i in data])
+				pkt=[event,self.serial_port]+data
+			else:
+				pkt=[event,self.serial_port,data]
+			#print('data:'+str(pkt))
 			self.sio._send_packet(packet.Packet(	packet.EVENT,
 													namespace=None,
-													data=[event,self.serial_port,data],
+													data=pkt,
 													id=None,
 													binary=None))
-			print("send:"+str([event,self.serial_port,data]))
+
 	def run_cmd(self, title):
 		'lookup command and start through http api'
 
@@ -191,7 +197,7 @@ class CNCjsGrbl:
 			for command in [rec for rec in self.commands['records'] if rec['title'] == title]:
 				pass
 			print('command:',str(command))
-			self.request = self.session.post('http://'+self.server_ip+':'+str(self.server_port)+'/api/commands/run/'+str(command['id']),headers={
+			self.request = self.session.post(self.http_url+'/api/commands/run/'+str(command['id']),headers={
 											'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8')),
 											'content-type': 'application/json'
 											},data=self.http_token)
@@ -213,6 +219,6 @@ class CNCjsGrbl:
 
 	def wait(self):
 		while (self.active_state not in ['Idle','Alarm','PacketOK','Hold','Sleep']):
-			print("wait=",self.active_state)
-			self.sio.sleep(0.05)
+			#print("wait=",self.active_state)
+			self.sio.sleep(0.01)
 
