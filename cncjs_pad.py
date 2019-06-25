@@ -30,7 +30,7 @@ class CNCjsPadLed(Thread):
 
 	def get_led_sequence(self):
 		'get current animation sequence for led'
-		print('led_sequence=',self.led_sequence['state'])
+		#print('led_sequence=',self.led_sequence['state'])
 		return self.led_sequence['state']
 
 	def set_led_sequence(self,state='Off'):
@@ -38,7 +38,7 @@ class CNCjsPadLed(Thread):
 		for seq in self.LED_SEQ:
 			if seq['state']==state:
 				self.led_sequence= seq
-				#print('led_sequence=',self.led_sequence)
+				print('led_sequence=',self.led_sequence)
 
 	def set_dev(self,dev=None):
 		if (self.dev==None):
@@ -121,10 +121,11 @@ class CNCjsPad(Thread):
 		self.start()
 
 	def grbl_callback(self,state):
-		self.gcode_Set_Position(pos=state['status']['mpos'])
 		self.controller_state=state['status']['activeState']
+		if self.controller_state in ['Home']:
+			self.gcode_Set_Position(pos=state['status']['mpos'])
 		self.led.set_led_sequence(self.controller_state)
-		#print("callback:",str(state['status']['mpos']))
+		#print("callback:",self.controller_state,' - ',str(state['status']['mpos']))
 
 	def gcode_Set_Position(self,pos={'xmin':0.0,'ymin':0.0,'zmin':0.0}):
 		'get x/y/z coordinates from cnc'
@@ -135,7 +136,7 @@ class CNCjsPad(Thread):
 
 	def gcode_Set_Limits(self,x,y,z):
 		self.CNC_LIMITS={'xmin':1.0-floor(float(x)), 'xmax':-1.0, 'ymin':1.0-floor(float(y)), 'ymax':-1.0, 'zmin':1.0-floor(float(z)), 'zmax':-1.0}
-		print("tool_limits: %s" % self.CNC_LIMITS)
+		#print("tool_limits: %s" % self.CNC_LIMITS)
 
 	def gcode_Get_Position(self):
 		'get x/y/z coordinates from cnc'
@@ -156,7 +157,7 @@ class CNCjsPad(Thread):
 
 	def gcode_Homing(self,foo):
 		'homing'
-		print("homing")
+		#print("homing")
 		self.push_gcode(data='$H\n',wait=True,stateless=True)
 
 	def gcode_Sleep(self,foo):
@@ -235,16 +236,26 @@ class CNCjsPad(Thread):
 		'gcode:G53 [X|Y|Z]<dir*step_size>'
 		axis,dir=args
 		#print(axis,dir,self.tool_pos,self.step_index)
-		self.tool_pos[axis]+=dir*self.STEP_INCREMENTS[self.step_index]
 
-		if self.tool_pos[axis]<self.CNC_LIMITS[axis+'min']:
-			self.tool_pos[axis]=self.CNC_LIMITS[axis+'min']
+		if True: # use absolute move
+			axis_pos=self.tool_pos[axis]
+			axis_pos+=dir*self.STEP_INCREMENTS[self.step_index]
 
-		if self.tool_pos[axis]>self.CNC_LIMITS[axis+'max']:
-			self.tool_pos[axis]=self.CNC_LIMITS[axis+'max']
+			if axis_pos<self.CNC_LIMITS[axis+'min']:
+				axis_pos=self.CNC_LIMITS[axis+'min']
 
-		gcode="G53 %s%f F1000\n" % (axis.upper(),self.tool_pos[axis])
-		self.push_gcode(data=gcode,wait=False)
+			if axis_pos>self.CNC_LIMITS[axis+'max']:
+				axis_pos=self.CNC_LIMITS[axis+'max']
+
+			#gcode="G53 %s%f F1000\n" % (axis.upper(),axis_pos) # absolute gcode move
+			gcode="$J=G53 F5000%s%f\n" % (axis.upper(),axis_pos) # absolute jog
+			self.tool_pos[axis]=axis_pos
+			self.push_gcode(data=gcode,wait=False)
+		else: # use relative mode
+			if self.tool_pos[axis]+dir*self.STEP_INCREMENTS[self.step_index]>self.CNC_LIMITS[axis+'min'] and self.tool_pos[axis]+dir*self.STEP_INCREMENTS[self.step_index]<self.CNC_LIMITS[axis+'max']:
+				gcode="$J=G91 F5000%s%f\n" % (axis.upper(),dir*self.STEP_INCREMENTS[self.step_index]) # absolute jog
+				self.push_gcode(data=gcode,wait=False)
+
 
 	def Step_Size(self,dir):
 		'set step size mm'
@@ -281,7 +292,7 @@ class CNCjsPad(Thread):
 		if stateless:	# gcode to be processed as a priority (reset, start, suspend, resume, etc...)
 			self.gcode_queue.appendleft(message)
 		else:	# gcode to be queued (move, home, macro, etc...)
-			if self.controller_state in ['Idle']: # ignore command if not ready
+			if self.controller_state in ['Idle','Jog']: # ignore command if not ready
 				self.gcode_queue.append(message)
 
 		#print("gcode: %s" % gcode)

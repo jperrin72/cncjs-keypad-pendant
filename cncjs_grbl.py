@@ -28,7 +28,7 @@ class CNCjsGrbl:
 		#self.sio = socketio.Client(logger=True)
 		self.sio = socketio.Client(logger=False)
 		self.activeState_callback=None
-		print(self,ip,port,serial,secret)
+		#print(self,ip,port,serial,secret)
 
 	def set_activeState_callback(self,func):
 		self.activeState_callback=func
@@ -67,7 +67,7 @@ class CNCjsGrbl:
 		@self.sio.on('connect')
 		def connect_message():
 			''
-			print("connect")
+			#print("connect")
 			self.connect_http()
 
 		@self.sio.on('startup')
@@ -92,7 +92,7 @@ class CNCjsGrbl:
 		@self.sio.on('serialport:read')
 		def serialport_read_message(data):
 		    ''
-		    print("serialport:read",data)
+		    #print("serialport:read",data)
 		    #if (data=='ok'):
 		    #	self.active_state='PacketOK'
 
@@ -104,7 +104,7 @@ class CNCjsGrbl:
 		@self.sio.on('serialport:write')
 		def serialport_write_message(data,sender):
 			''
-			print("serialport:write=",data)
+			#print("serialport:write=",data)
 
 		@self.sio.on('controller:settings')
 		def controller_settings_message(controller,settings):
