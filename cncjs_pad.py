@@ -23,6 +23,8 @@ class CNCjsPadLed(Thread):
 						{'state':'Task', 	'sequence':0b10101010101010101010101010101010, 'repeat': True	}
 					)
 
+		self.led_sequence=None
+		self.controller_state=None
 		self.set_led_sequence('Sleep')
 		self.dev=None
 
@@ -33,8 +35,10 @@ class CNCjsPadLed(Thread):
 
 	def set_led_sequence(self,state='Off'):
 		'set current animation sequence for led'
-		self.led_sequence=list(filter(lambda seq: seq['state'] == state, self.LED_SEQ))[0]
-		print('led_sequence=',self.led_sequence['state'])
+		for seq in self.LED_SEQ:
+			if seq['state']==state:
+				self.led_sequence= seq
+				#print('led_sequence=',self.led_sequence)
 
 	def set_dev(self,dev=None):
 		if (self.dev==None):
@@ -50,11 +54,11 @@ class CNCjsPadLed(Thread):
 				self.dev.set_led(ecodes.LED_NUML, led)
 			time.sleep(1.0/64)
 
-class CNCjsPad:
+class CNCjsPad(Thread):
 	'Manage keyboard events and generate associated gcode'
 
 	def __init__(self):
-
+		Thread.__init__(self)
 		# constants and global variables section
 
 		self.CNC_LIMITS={'xmin':0.0, 'xmax':450.0, 'ymin':0.0, 'ymax':1024.0, 'zmin':0.0, 'zmax':35.0}
@@ -112,7 +116,15 @@ class CNCjsPad:
 		    self.devices.append(device)
 
 		self.fds = {dev.fd: dev for dev in self.devices}
-		#print("devices=",self.devices)
+		print("devices=",self.devices)
+
+		self.start()
+
+	def grbl_callback(self,state):
+		self.gcode_Set_Position(pos=state['status']['mpos'])
+		self.controller_state=state['status']['activeState']
+		self.led.set_led_sequence(self.controller_state)
+		#print("callback:",str(state['status']['mpos']))
 
 	def gcode_Set_Position(self,pos={'xmin':0.0,'ymin':0.0,'zmin':0.0}):
 		'get x/y/z coordinates from cnc'
@@ -135,57 +147,57 @@ class CNCjsPad:
 	def gcode_Cycle_Start(self,foo):
 		'cyclestart'
 		print("cyclestart")
-		self.push_gcode(data='~\n',wait=False)
+		self.push_gcode(data='~\n',wait=False,stateless=True)
 
 	def gcode_Feed_Hold(self,foo):
 		'feedhold'
 		print("feedhold")
-		self.push_gcode(data='!\n',wait=False)
+		self.push_gcode(data='!\n',wait=False,stateless=True)
 
 	def gcode_Homing(self,foo):
 		'homing'
 		print("homing")
-		self.push_gcode(data='$H\n',wait=True)
+		self.push_gcode(data='$H\n',wait=True,stateless=True)
 
 	def gcode_Sleep(self,foo):
 		'sleep'
 		print("sleep")
-		self.push_gcode(data='$SLP\n',wait=False)
+		self.push_gcode(data='$SLP\n',wait=False,stateless=True)
 
 	def gcode_Unlock(self,foo):
 		'unlock'
 		print("unlock")
-		self.push_gcode(data='$X\n',wait=False)
+		self.push_gcode(data='$X\n',wait=False,stateless=True)
 	
 	def gcode_Reset(self,foo):
 		'reset'
 		print("reset")
-		self.push_gcode(data='\x18',wait=False)
+		self.push_gcode(data='\x18',wait=False,stateless=True)
 
 	def gcode_Start(self,foo):
 		'gcode:start'
 		print("gcode:start")
-		self.push_gcode(event='command',data='gcode:start',wait=False)
+		self.push_gcode(event='command',data='gcode:start',wait=False,stateless=True)
 
 	def gcode_Pause(self,foo):
 		'gcode:pause'
 		print("gcode:pause")
-		self.push_gcode(event='command',data='gcode:pause',wait=False)
+		self.push_gcode(event='command',data='gcode:pause',wait=False,stateless=True)
 
 	def gcode_Stop(self,foo):
 		'gcode:stop'
 		print("gcode:stop")
-		self.push_gcode(event='command',data='gcode:stop',wait=False)
+		self.push_gcode(event='command',data='gcode:stop',wait=False,stateless=True)
 		
 	def gcode_Resume(self,foo):
 		'gcode:resume'
 		print("gcode:resume")
-		self.push_gcode(event='command',data='gcode:resume',wait=False)
+		self.push_gcode(event='command',data='gcode:resume',wait=False,stateless=True)
 		
 	def gcode_Unload(self,foo):
 		'gcode:unload'
 		print("gcode:unload")
-		self.push_gcode(event='command',data='gcode:unload',wait=False)
+		self.push_gcode(event='command',data='gcode:unload',wait=False,stateless=True)
 
 	def gcode_SetHome(self,foo):
 		'set working home position'
@@ -263,10 +275,15 @@ class CNCjsPad:
 				action['method'](self,action['params'])
 
 
-	def push_gcode(self,event='write',data=None,wait=True):
+	def push_gcode(self,event='write',data=None,wait=True,stateless=False):
 		'push a command into gcode buffer'
-		message={'event':event,'data':data,'wait':wait}
-		self.gcode_queue.append(message)
+		message={'event':event,'data':data,'wait':wait, 'stateless':stateless}
+		if stateless:	# gcode to be processed as a priority (reset, start, suspend, resume, etc...)
+			self.gcode_queue.appendleft(message)
+		else:	# gcode to be queued (move, home, macro, etc...)
+			if self.controller_state in ['Idle']: # ignore command if not ready
+				self.gcode_queue.append(message)
+
 		#print("gcode: %s" % gcode)
 
 	def gcode_ready(self):
@@ -285,7 +302,6 @@ class CNCjsPad:
 		self.prev_key = self.cur_key
 		self.prev_key_time = self.cur_key_time
 		#self.cur_key  = input()
-
 		r, w, x = select(self.devices, [], [])
 		for dev in r:
 			for event in self.fds[dev.fd].read(): 
@@ -308,8 +324,11 @@ class CNCjsPad:
 			else:
 				self.key_rep_num=1
 
-			print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
+			#print(self.cur_key,self.prev_key,self.key_delta_time,self.key_rep_num)
 			self.decode_key(self.cur_key)
 
 
-
+	def run(self):
+		'process keypad events'
+		while True:
+			self.get_key_press()

@@ -27,7 +27,11 @@ class CNCjsGrbl:
 		self.http_url='http://'+self.server_ip+':'+str(self.server_port)
 		#self.sio = socketio.Client(logger=True)
 		self.sio = socketio.Client(logger=False)
+		self.activeState_callback=None
 		print(self,ip,port,serial,secret)
+
+	def set_activeState_callback(self,func):
+		self.activeState_callback=func
 
 	def disconnect(self):
 		self.sio.disconnect()
@@ -89,8 +93,8 @@ class CNCjsGrbl:
 		def serialport_read_message(data):
 		    ''
 		    print("serialport:read",data)
-		    if (data=='ok'):
-		    	self.active_state='PacketOK'
+		    #if (data=='ok'):
+		    #	self.active_state='PacketOK'
 
 		@self.sio.on('serialport:change')
 		def serialport_read_message(data):
@@ -110,12 +114,16 @@ class CNCjsGrbl:
 		def grbl_state_message(state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
-		    print("Grbl activeState=",self.active_state,self.controller_state['status']['mpos'])
+		    if (self.activeState_callback is not None):
+		    	self.activeState_callback(state)
+		    #print("Grbl activeState=",self.active_state,self.controller_state['status']['mpos'])
 
 		@self.sio.on('controller:state')
 		def controller_state_message(controller,state):
 		    self.controller_state=state
 		    self.active_state=state['status']['activeState']
+		    if (self.activeState_callback is not None):
+		    	self.activeState_callback(state)
 		    ##print("Ctrl activeState=",self.active_state,self.controller_state['status']['mpos'])
 
 		@self.sio.on('workflow:state')
@@ -149,8 +157,8 @@ class CNCjsGrbl:
 			print("run macro:"+data)
 			self.run_macro(data)
 		else:
-			if (wait):
-				self.active_state='PacketSent'
+			#if (wait):
+			#	self.active_state='PacketSent'
 			if isinstance(data,list):
 				pkt=[event,self.serial_port]+data
 			else:
@@ -217,8 +225,7 @@ class CNCjsGrbl:
 
 		return None
 
-	def wait(self):
-		while (self.active_state not in ['Idle','Alarm','PacketOK','Hold','Sleep']):
-			#print("wait=",self.active_state)
-			self.sio.sleep(0.01)
+	def wait_ready(self):
+		while (self.active_state not in ['Idle','Alarm','Hold','Sleep']):
+			self.sio.sleep(0.001)
 
