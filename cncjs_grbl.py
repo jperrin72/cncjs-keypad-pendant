@@ -221,7 +221,10 @@ class CNCjsGrbl:
 			for macro in [rec for rec in self.api['records'] if rec['name'] == name]:
 				pass
 			print('macro:',str(macro))
-			self.send(event='write',data=macro['command']+'\n',wait=True)
+			for cmd in macro['command'].split('\n'):
+				if cmd!='\n':
+					#print("macro cmd:",cmd)
+					self.send(event='write',data=cmd+'\n',wait=True)
 
 		return None
 
