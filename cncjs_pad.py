@@ -29,7 +29,7 @@ class CNCjsPadLed(Thread):
 		self.dev=None
 
 	def get_led_sequence(self):
-		'get current animation sequence for led'
+		'get current animation sequence for led' 
 		#print('led_sequence=',self.led_sequence['state'])
 		return self.led_sequence['state']
 
@@ -65,33 +65,75 @@ class CNCjsPad(Thread):
 		self.STEP_INCREMENTS=[0.01,0.05,0.1,0.5,1.0,5.0,10.0,50.0,100.0]
 
 		self.F_IGNORE_REPEAT=1
-		self.F_3TIME=2
+		self.F_2TIME=2
+		self.F_3TIME=3
+		# RF302 wireless Numeric keypad 28 keys
 		self.ACTIONS=(
-						{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.task_Macro, 			'params':'Go Home', 	'flag':self.F_3TIME			},
-						{'key':'KEY_TAB', 		'method':CNCjsPad.task_Macro, 			'params':'Tool up', 	'flag':self.F_3TIME			},
-						{'key':'KEY_MAIL', 		'method':CNCjsPad.gcode_Reset, 			'params':None, 			'flag':self.F_3TIME			},
-						{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Command,			'params':'Halt', 		'flag':self.F_3TIME			},
-						{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Start, 			'params':None, 			'flag':None					},
+#						{'key':'KEY_CALC', 		'method':None, 							'params':None, 			'flag':None	},
+						{'key':'KEY_4', 		'method':CNCjsPad.task_Laser_Test, 		'params':None, 			'flag':self.F_IGNORE_REPEAT	},
+						{'key':'KEY_9', 		'method':CNCjsPad.task_Macro, 			'params':'Tool Probe', 	'flag':self.F_3TIME			},
+						{'key':'KEY_0', 		'method':CNCjsPad.gcode_Reset, 			'params':None, 			'flag':self.F_3TIME			},
+						{'key':'KEY_DELETE',	'method':CNCjsPad.task_Command,			'params':'Halt', 		'flag':self.F_3TIME			},
+
+						{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 			'flag':None					},
+						{'key':'KEY_EQUAL',		'method':CNCjsPad.gcode_Start, 			'params':None, 			'flag':None					},
 						{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 			'flag':None					},
-						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Stop, 			'params':None, 			'flag':None					},
-						{'key':'KEY_BACKSPACE', 'method':CNCjsPad.gcode_Resume, 		'params':None, 			'flag':None					},
-						{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 			'flag':self.F_3TIME			},
+						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Resume,			'params':None, 			'flag':None					},
+						{'key':'KEY_KEY_BACKSPACE','method':CNCjsPad.gcode_Stop,		'params':None, 			'flag':None					},
+
+						{'key':'KEY_ESC',       'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 			'flag':None					},
+						{'key':'KEY_KP7', 		'method':CNCjsPad.task_Macro, 			'params':'Tool up', 	'flag':self.F_3TIME			},
 						{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 		'flag':None					},
 						{'key':'KEY_KP9', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 		'flag':None					},
-						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 			'flag':None					},
+						{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 			'flag':None					},
+
+						{'key':'KEY_TAB',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 			'flag':None					},
 						{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 		'flag':None					},
-						{'key':'KEY_KP5', 	    'method':CNCjsPad.gcode_SetHome, 		'params':None, 			'flag':self.F_3TIME			},
+						{'key':'KEY_KP5', 		'method':CNCjsPad.task_Macro, 			'params':'Go Home', 	'flag':self.F_3TIME			},
 						{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 		'flag':None					},
-						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 			'flag':None					},
-						{'key':'KEY_KP1',       'method':CNCjsPad.gcode_Sleep, 			'params':None, 			'flag':self.F_3TIME			},
+						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 			'flag':None					},
+
+						{'key':'KEY_COMMA',     'method':CNCjsPad.gcode_Sleep, 			'params':None, 			'flag':None					},
+#						{'key':'KEY_KP1',     'method':CNCjsPad.gcode_Tool_Down, 			'params':None, 			'flag':None					},
 						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 		'flag':None					},
 						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 		'flag':None					},
-						{'key':'KEY_KP0',       'method':CNCjsPad.task_Macro, 			'params':'Tool probe',	'flag':self.F_3TIME					},
-						{'key':'KEY_XXX',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 			'flag':None					},
-						{'key':'KEY_0',         'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 			'flag':None					}, #key 000
-						{'key':'KEY_KPDOT', 	'method':CNCjsPad.task_Laser_Test, 		'params':None, 			'flag':self.F_IGNORE_REPEAT	},
-						{'key':'KEY_KPENTER',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 			'flag':None					}
+#						{'key':'KEY_KPENTER', 	'method':None,					 		'params':None, 			'flag':None					},
+
+#						{'key':'KEY_KP0x2',         'method':None, 		'params':None, 			'flag':None					} #key 00
+						{'key':'KEY_KP0', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 			'flag':self.F_3TIME			},
+						{'key':'KEY_KPDOT',     'method':CNCjsPad.gcode_SetHome, 		'params':None, 			'flag':self.F_3TIME			},
+#						{'key':'KEY_KPENTER', 	'method':None,					 		'params':None, 			'flag':None					},
+
+						{'key':None, 			'method':None,					 		'params':None, 			'flag':None					}
 					)
+
+		# FANTECH wired numeric keypad 23 keys
+		# self.ACTIONS=(
+		# 				{'key':'KEY_HOMEPAGE', 	'method':CNCjsPad.task_Macro, 			'params':'Go Home', 	'flag':self.F_3TIME			},
+		# 				{'key':'KEY_TAB', 		'method':CNCjsPad.task_Macro, 			'params':'Tool up', 	'flag':self.F_3TIME			},
+		# 				{'key':'KEY_MAIL', 		'method':CNCjsPad.gcode_Reset, 			'params':None, 			'flag':self.F_3TIME			},
+		# 				{'key':'KEY_CALC', 	    'method':CNCjsPad.task_Command,			'params':'Halt', 		'flag':self.F_3TIME			},
+		# 				{'key':'KEY_NUMLOCK',   'method':CNCjsPad.gcode_Start, 			'params':None, 			'flag':None					},
+		# 				{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 			'flag':None					},
+		# 				{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Stop, 			'params':None, 			'flag':None					},
+		# 				{'key':'KEY_BACKSPACE', 'method':CNCjsPad.gcode_Resume, 		'params':None, 			'flag':None					},
+		# 				{'key':'KEY_KP7', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 			'flag':self.F_3TIME			},
+		# 				{'key':'KEY_KP8', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',+1], 		'flag':None					},
+		# 				{'key':'KEY_KP9', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',+1], 		'flag':None					},
+		# 				{'key':'KEY_KPMINUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 			'flag':None					},
+		# 				{'key':'KEY_KP4', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',-1], 		'flag':None					},
+		# 				{'key':'KEY_KP5', 	    'method':CNCjsPad.gcode_SetHome, 		'params':None, 			'flag':self.F_3TIME			},
+		# 				{'key':'KEY_KP6', 	    'method':CNCjsPad.gcode_Move, 			'params':['x',+1], 		'flag':None					},
+		# 				{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':+1, 			'flag':None					},
+		# 				{'key':'KEY_KP1',       'method':CNCjsPad.gcode_Sleep, 			'params':None, 			'flag':self.F_3TIME			},
+		# 				{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 		'flag':None					},
+		# 				{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 		'flag':None					},
+		# 				{'key':'KEY_KP0',       'method':CNCjsPad.task_Macro, 			'params':'Tool probe',	'flag':self.F_3TIME					},
+		# 				{'key':'KEY_XXX',       'method':CNCjsPad.gcode_Unlock, 		'params':None, 			'flag':None					},
+		# 				{'key':'KEY_0',         'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 			'flag':None					}, #key 000
+		# 				{'key':'KEY_KPDOT', 	'method':CNCjsPad.task_Laser_Test, 		'params':None, 			'flag':self.F_IGNORE_REPEAT	},
+		# 				{'key':'KEY_KPENTER',   'method':CNCjsPad.gcode_Cycle_Start, 	'params':None, 			'flag':None					}
+		# 			)
 
 		self.KEY_REPEAT_TIME=1.0
 		self.step_index=self.STEP_INCREMENTS.index(1.0)
@@ -275,6 +317,11 @@ class CNCjsPad(Thread):
 		#print(action)
 		if action!='':
 			ignore=False
+			if action['flag']==self.F_2TIME:
+				if self.key_rep_num==2:
+					self.key_rep_num=0
+				else:
+					ignore=True
 			if action['flag']==self.F_3TIME:
 				if self.key_rep_num==3:
 					self.key_rep_num=0
