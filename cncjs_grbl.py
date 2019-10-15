@@ -215,7 +215,12 @@ class CNCjsGrbl:
 
 	def run_macro(self, name):
 		'lookup macro and start through http api'
-
+"""
+// - Load a macro
+//   controller.command('macro:load', '<macro-id>', { /* optional vars */ }, callback)
+// - Run a macro
+//   controller.command('macro:run', '<macro-id>', { /* optional vars */ }, callback)
+"""
 		print("run macro!")
 		if self.api is not None:
 			for macro in [rec for rec in self.api['records'] if rec['name'] == name]:
