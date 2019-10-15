@@ -220,6 +220,20 @@ class CNCjsGrbl:
 //   controller.command('macro:load', '<macro-id>', { /* optional vars */ }, callback)
 // - Run a macro
 //   controller.command('macro:run', '<macro-id>', { /* optional vars */ }, callback)
+
+       // Macros
+        app.get(urljoin(settings.route, 'api/macros'), api.macros.fetch);
+        app.post(urljoin(settings.route, 'api/macros'), api.macros.create);
+        app.get(urljoin(settings.route, 'api/macros/:id'), api.macros.read);
+        app.put(urljoin(settings.route, 'api/macros/:id'), api.macros.update);
+        app.delete(urljoin(settings.route, 'api/macros/:id'), api.macros.__delete);
+	
+	res.send({
+            records: records.map(record => {
+                const { id, mtime, name, content } = { ...record };
+                return { id, mtime, name, content };
+            })
+	    
 """
 		print("run macro!")
 		if self.api is not None:
