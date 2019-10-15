@@ -71,7 +71,7 @@ class CNCjsPad(Thread):
 		self.ACTIONS=(
 #						{'key':'KEY_CALC', 		'method':None, 							'params':None, 			'flag':None	},
 						{'key':'KEY_4', 		'method':CNCjsPad.task_Laser_Test, 		'params':None, 			'flag':self.F_IGNORE_REPEAT	},
-						{'key':'KEY_9', 		'method':CNCjsPad.task_Macro, 			'params':'Tool Probe', 	'flag':self.F_3TIME			},
+						{'key':'KEY_9', 		'method':CNCjsPad.task_Macro, 			'params':'Tool probe', 	'flag':self.F_3TIME			},
 						{'key':'KEY_0', 		'method':CNCjsPad.gcode_Reset, 			'params':None, 			'flag':self.F_3TIME			},
 						{'key':'KEY_DELETE',	'method':CNCjsPad.task_Command,			'params':'Halt', 		'flag':self.F_3TIME			},
 
@@ -94,7 +94,7 @@ class CNCjsPad(Thread):
 						{'key':'KEY_KPPLUS', 	'method':CNCjsPad.Step_Size, 			'params':-1, 			'flag':None					},
 
 						{'key':'KEY_COMMA',     'method':CNCjsPad.gcode_Sleep, 			'params':None, 			'flag':None					},
-#						{'key':'KEY_KP1',     'method':CNCjsPad.gcode_Tool_Down, 			'params':None, 			'flag':None					},
+						{'key':'KEY_KP1',		'method':CNCjsPad.task_Macro, 			'params':'Tool down', 	'flag':self.F_3TIME			},
 						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 		'flag':None					},
 						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 		'flag':None					},
 #						{'key':'KEY_KPENTER', 	'method':None,					 		'params':None, 			'flag':None					},
