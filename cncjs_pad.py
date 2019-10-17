@@ -79,7 +79,7 @@ class CNCjsPad(Thread):
 						{'key':'KEY_EQUAL',		'method':CNCjsPad.gcode_Start, 			'params':None, 			'flag':None					},
 						{'key':'KEY_KPSLASH',   'method':CNCjsPad.gcode_Pause, 			'params':None, 			'flag':None					},
 						{'key':'KEY_KPASTERISK','method':CNCjsPad.gcode_Resume,			'params':None, 			'flag':None					},
-						{'key':'KEY_KEY_BACKSPACE','method':CNCjsPad.gcode_Stop,		'params':None, 			'flag':None					},
+						{'key':'KEY_BACKSPACE',	'method':CNCjsPad.gcode_Stop,			'params':None, 			'flag':None					},
 
 						{'key':'KEY_ESC',       'method':CNCjsPad.gcode_Feed_Hold, 		'params':None, 			'flag':None					},
 						{'key':'KEY_KP7', 		'method':CNCjsPad.task_Macro, 			'params':'Tool up', 	'flag':self.F_3TIME			},
@@ -97,7 +97,8 @@ class CNCjsPad(Thread):
 						{'key':'KEY_KP1',		'method':CNCjsPad.task_Macro, 			'params':'Tool down', 	'flag':self.F_3TIME			},
 						{'key':'KEY_KP2', 	    'method':CNCjsPad.gcode_Move, 			'params':['y',-1], 		'flag':None					},
 						{'key':'KEY_KP3', 	    'method':CNCjsPad.gcode_Move, 			'params':['z',-1], 		'flag':None					},
-#						{'key':'KEY_KPENTER', 	'method':None,					 		'params':None, 			'flag':None					},
+						{'key':'KEY_KPENTER',	'method':CNCjsPad.gcode_Feeder_Start,	'params':None, 			'flag':None					},
+#						{'key':'KEY_KPENTER',	'method':CNCjsPad.gcode_Feeder_Stop,	'params':None, 			'flag':None					},
 
 #						{'key':'KEY_KP0x2',         'method':None, 		'params':None, 			'flag':None					} #key 00
 						{'key':'KEY_KP0', 	    'method':CNCjsPad.gcode_Homing, 		'params':None, 			'flag':self.F_3TIME			},
@@ -217,6 +218,16 @@ class CNCjsPad(Thread):
 		'reset'
 		print("reset")
 		self.push_gcode(data='\x18',wait=False,stateless=True)
+
+	def gcode_Feeder_Start(self,foo):
+		'gcode:start'
+		print("feeder:start")
+		self.push_gcode(event='command',data='feeder:start',wait=False,stateless=True)
+
+	def gcode_Feeder_Stop(self,foo):
+		'gcode:stop'
+		print("feeder:stop")
+		self.push_gcode(event='command',data='feeder:stop',wait=False,stateless=True)
 
 	def gcode_Start(self,foo):
 		'gcode:start'

@@ -148,8 +148,9 @@ class CNCjsGrbl:
 		self.sio.connect(self.ws_url,headers={'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8'))})
 
 
-	def send(self,event,data=None,wait=False):
+	def send(self,event,data=None,extra=None,wait=False):
 
+		#rint("event:"+str(event)+'\n')
 		if event=='command:start':
 			self.run_cmd(data)
 		if event=='macro:start':
@@ -160,8 +161,12 @@ class CNCjsGrbl:
 			if isinstance(data,list):
 				pkt=[event,self.serial_port]+data
 			else:
-				pkt=[event,self.serial_port,data]
-			#print('data:'+str(pkt))
+				if extra==None:
+					pkt=[event,self.serial_port,data]
+				else:
+					pkt=[event,self.serial_port,data,extra]
+
+			#rint('packet data:'+str(pkt))
 			self.sio._send_packet(packet.Packet(	packet.EVENT,
 													namespace=None,
 													data=pkt,
@@ -217,19 +222,9 @@ class CNCjsGrbl:
 		if self.api is not None:
 			for macro in [rec for rec in self.api['records'] if rec['name'] == name]:
 				pass
-			print('macro:',str(macro))
-			for cmd in macro['command'].split('\n'):
-				if cmd!='\n':
-					#print("macro cmd:",cmd)
-					self.send(event='write',data=cmd+'\n',wait=True)
-			#self.send(event='macro:run',data=macro['id'],wait=True)
-
-			#print('url:',self.http_url+'/api/macros/'+str(macro['id']))
-			#self.request = self.session.post(self.http_url+'/api/macro/'+str(macro['id']),headers={
-			#								'Authorization': 'Bearer {}'.format(self.access_token.decode('utf-8')),
-			#								'content-type': 'application/json'
-			#								},data=self.http_token)
-			#return self.request.json()
+			#print('macro:',str(macro))
+			self.send(event='command',data='gcode',extra=str(macro['command'])+'\n',wait=True)
+			print("macro cmd:",str(macro['command']).replace('\n','\\n'))
 
 		return None
 
