@@ -19,7 +19,7 @@
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
-|      FEED HOLD      |       TOOL UP       |         Y+          |          Z+         |      DEC STEP       |
+|      FEED HOLD      |      PARK TOOL      |         Y+          |          Z+         |      DEC STEP       |
 |                     |          x3         |                     |                     |                     |
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
@@ -39,8 +39,8 @@
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
-|        SLEEP        |      TOOL DOWN      |         Y-          |          Z-         |                     |
-|                     |          x3         |                     |                     |                     |
+|        SLEEP        |     <unassigned>    |         Y-          |          Z-         |                     |
+|                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
 |                     |                     |                     |                     |                     |
