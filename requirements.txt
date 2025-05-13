@@ -1,0 +1,5 @@
+websocket==0.2.1
+requests==2.26.0
+pyjwt==1.7.1
+python-socketio[client]==5.4.0
+evdev==1.4.0
